@@ -1,0 +1,3 @@
+# AI-Driven-Development-template
+
+開発環境に1コマンドでAI駆動開発を進めるためのセットアップができるテンプレート
