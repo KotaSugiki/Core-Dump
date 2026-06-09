@@ -46,9 +46,20 @@ AI-Driven-Development-template/
 - **npm** 8.0.0 以上
 - **VSCode** (拡張機能 `open-in-browser`推奨)
 
-### インストール手順
+### 既存プロジェクトへの導入手順 (PowerShell)
+
+すでに存在するプロジェクトに本テンプレートのAI駆動開発環境（[.agents](file:///C:/Users/dxpro/skills-codelab/.agents) フォルダ）を導入したい場合は、対象プロジェクトのルートディレクトリでPowerShellを開き、以下のコマンドを実行してください。
+
+```powershell
+Invoke-Expression (Invoke-RestMethod -Uri "http://192.168.0.90:3000/DEV_INTELLIGENT/AI-Driven-Development-template/raw/branch/main/install.ps1")
+```
+
+このコマンドを実行すると、Giteaから自動的に最新の [.agents](file:///C:/Users/dxpro/skills-codelab/.agents) フォルダがダウンロードされ、既存プロジェクトへ安全に展開・マージされます。
+
+### 新規セットアップ（クローンによる開始）
 
 1. リポジトリをクローンまたはダウンロード
+
 
 ```bash
 git clone http://[IP_ADDRESS]/DEV_INTELLIGENT/AI-Driven-Development-template.git
