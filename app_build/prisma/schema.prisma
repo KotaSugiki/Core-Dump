@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Feed {
+  id          String    @id @default(uuid())
+  title       String
+  url         String    @unique
+  description String?
+  lastFetched DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  articles    Article[]
+}
+
+model Article {
+  id          String   @id @default(uuid())
+  title       String
+  link        String   @unique
+  pubDate     DateTime
+  content     String?
+  creator     String?
+  feedId      String
+  feed        Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  isBookmarked Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Digest {
+  id          String   @id @default(uuid())
+  date        String   @unique // YYYY-MM-DD 形式で日ごとにユニーク
+  html        String
+  createdAt   DateTime @default(now())
+}

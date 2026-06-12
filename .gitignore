@@ -1,0 +1,10 @@
+# データベースファイル
+*.db
+*.db-journal
+
+# 環境変数
+.env*
+
+# エディタ設定
+.agents/
+CLAUDE.md
