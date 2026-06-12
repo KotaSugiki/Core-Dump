@@ -267,7 +267,7 @@ export default function Home() {
           </button>
           <button
             className={styles.digestBtn}
-            onClick={generateDigest}
+            onClick={() => generateDigest()}
             disabled={digestLoading}
           >
             {digestLoading ? '🧠 生成中...' : '🧠 AI Digest'}
@@ -551,7 +551,7 @@ export default function Home() {
               {digestError && (
                 <div className={styles.digestError}>
                   <p>⚠️ {digestError}</p>
-                  <button className={styles.button} onClick={generateDigest}>リトライ</button>
+                  <button className={styles.button} onClick={() => generateDigest()}>リトライ</button>
                 </div>
               )}
               {digestHtml && (
