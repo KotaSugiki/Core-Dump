@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('q') || '';
     const bookmarked = searchParams.get('bookmarked') === 'true';
 
-    const whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
     if (search) {
       whereClause.OR = [
         { title: { contains: search } },
@@ -24,11 +24,13 @@ export async function GET(request: Request) {
       where: whereClause,
       orderBy: { pubDate: 'desc' },
       include: { feed: true },
-      take: 50,
+      take: 100,
     });
 
     return NextResponse.json(articles);
   } catch (error) {
+    console.error('GET /api/articles error:', error);
     return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
   }
 }
+

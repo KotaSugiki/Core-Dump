@@ -22,16 +22,20 @@ model Feed {
 }
 
 model Article {
-  id          String   @id @default(uuid())
-  title       String
-  link        String   @unique
-  pubDate     DateTime
-  content     String?
-  creator     String?
-  feedId      String
-  feed        Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
-  isBookmarked Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  title          String
+  link           String   @unique
+  pubDate        DateTime
+  content        String?
+  creator        String?
+  feedId         String
+  feed           Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  isBookmarked   Boolean  @default(false)
+  aiSummary      String?                    // AI 要約キャッシュ（Gemini で生成）
+  isReadLater    Boolean  @default(false)    // 「あとで読む」キューに含まれるか
+  readLaterOrder Int?                       // キュー内の並び順（小さいほど先頭）
+  isRead         Boolean  @default(false)   // 読了済みフラグ
+  createdAt      DateTime @default(now())
 }
 
 model Digest {

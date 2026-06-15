@@ -1,0 +1,589 @@
+/* ============================
+   Smart Feed Timeline ビュー
+   ============================
+   日付別にグルーピングされた縦型タイムライン。
+   Intersection Observer で遅延表示アニメーションを適用。 */
+
+.timeline {
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+/* 中央の縦線 */
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--primary),
+    var(--card-border) 50%,
+    transparent
+  );
+}
+
+/* 日付グループヘッダー */
+.dayGroup {
+  margin-bottom: 2rem;
+}
+
+.dayHeader {
+  position: relative;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--background);
+  display: inline-block;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+
+/* 個々のタイムラインノード */
+.node {
+  position: relative;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  /* 遅延表示アニメーション */
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.node.visible {
+  animation: nodeSlideIn 0.4s ease-out forwards;
+}
+
+@keyframes nodeSlideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.node:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
+}
+
+/* タイムラインドット（縦線上の丸マーカー） */
+.node::before {
+  content: '';
+  position: absolute;
+  left: -2.2rem;
+  top: 1.3rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: var(--background);
+  transition: background 0.2s ease;
+}
+
+.node:hover::before {
+  background: var(--primary);
+}
+
+/* アクセントライン（ノード左端のカラーバー） */
+.nodeAccent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 12px 0 0 12px;
+}
+
+/* ノード内のフィードバッジ */
+.nodeFeedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.nodeFavicon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+/* ノード内の記事タイトル */
+.nodeTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.4rem;
+  color: var(--foreground);
+  transition: color 0.2s ease;
+}
+
+.node:hover .nodeTitle {
+  color: var(--primary);
+}
+
+/* ノードのメタ情報（日時・著者） */
+.nodeMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ノードのアクションボタン群 */
+.nodeActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.nodeActionBtn {
+  background: none;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.nodeActionBtn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.nodeActionBtn.active {
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+/* ===== ビュートグルスイッチ ===== */
+.viewToggle {
+  display: inline-flex;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.viewToggleBtn {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.viewToggleBtn:hover {
+  color: var(--foreground);
+}
+
+.viewToggleBtnActive {
+  background: var(--primary);
+  color: #fff;
+}
+
+.viewToggleBtnActive:hover {
+  color: #fff;
+}
+
+/* ===== AI 要約ポップオーバー ===== */
+.summarySection {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summaryText {
+  margin: 0;
+}
+
+/* 要約ボタン */
+.aiSummaryBtn {
+  background: none;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  color: #8b5cf6;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.aiSummaryBtn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+}
+
+.aiSummaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* スケルトンローディング */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card-border) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--card-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+  height: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.skeleton:last-child {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== Read Later サイドパネル ===== */
+.readLaterOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  animation: panelFadeIn 0.25s ease forwards;
+}
+
+@keyframes panelFadeIn {
+  to { opacity: 1; }
+}
+
+.readLaterPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 90vw);
+  height: 100vh;
+  z-index: 950;
+  background: var(--background);
+  border-left: 1px solid var(--card-border);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  animation: panelSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes panelSlideIn {
+  to { transform: translateX(0); }
+}
+
+.readLaterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--card-border);
+  flex-shrink: 0;
+}
+
+.readLaterTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.readLaterBadge {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.readLaterClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--foreground);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.readLaterClose:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.readLaterBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border) transparent;
+}
+
+.readLaterEmpty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* ドラッグ対応アイテム */
+.readLaterItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.readLaterItem:active {
+  cursor: grabbing;
+}
+
+.readLaterItem:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ドラッグ中のハイライト */
+.readLaterItem.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.readLaterItem.dragOver {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dragHandle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+  user-select: none;
+}
+
+.readLaterItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.readLaterItemTitle {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.readLaterItemMeta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.readLaterItemActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.readLaterActionBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.readLaterActionBtn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+}
+
+.readLaterActionBtn.readDone {
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+/* フッター */
+.readLaterFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--card-border);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.readLaterClearBtn {
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.readLaterClearBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* ===== ヘッダー Read Later ボタン ===== */
+.readLaterHeaderBtn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.readLaterHeaderBtn:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: var(--primary);
+}
+
+.headerBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* ===== あとで読むボタン（カード内） ===== */
+.readLaterBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: color 0.2s ease, transform 0.2s ease;
+  padding: 0;
+}
+
+.readLaterBtn.active {
+  color: var(--primary);
+}
+
+.readLaterBtn:hover {
+  transform: scale(1.15);
+}
+
+/* ===== レスポンシブ対応 ===== */
+@media (max-width: 768px) {
+  .timeline {
+    padding-left: 1.5rem;
+  }
+
+  .timeline::before {
+    left: 6px;
+  }
+
+  .node::before {
+    left: -1.3rem;
+    width: 8px;
+    height: 8px;
+  }
+
+  .readLaterPanel {
+    width: 100vw;
+  }
+}
