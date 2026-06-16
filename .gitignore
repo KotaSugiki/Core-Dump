@@ -4,7 +4,18 @@
 
 # 環境変数
 .env*
+!.env.example
 
 # エディタ設定
 .agents/
 CLAUDE.md
+
+# Node.js
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel/

@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Supabase 接続プーリング用（Transaction モード時に必要）
+  directUrl = env("DIRECT_URL")
 }
 
 model Feed {

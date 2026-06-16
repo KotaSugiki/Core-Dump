@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Vercel デプロイ時のビルド最適化
+  output: 'standalone',
 };
 
 export default nextConfig;
+
