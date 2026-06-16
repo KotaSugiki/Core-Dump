@@ -13,11 +13,12 @@ function getTodayDateString(): string {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // クライアントからリクエストヘッダー経由でAPIキーを受け取る（サーバーには保存しない）
+  const apiKey = request.headers.get('X-Gemini-API-Key');
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'GEMINI_API_KEY が設定されていません。.env ファイルに追加してください。' },
-      { status: 500 }
+      { error: 'APIキーが設定されていません。設定画面からGemini APIキーを入力してください。' },
+      { status: 401 }
     );
   }
 

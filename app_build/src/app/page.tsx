@@ -341,6 +341,53 @@ export default function Home() {
   const [showReadLaterPanel, setShowReadLaterPanel] = useState(false);
   const [summarizingIds, setSummarizingIds] = useState<Set<string>>(new Set());
 
+  // --- 設定画面の状態 ---
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [apiKeyInput, setApiKeyInput] = useState('');
+
+  // localStorageからAPIキーを初期ロード
+  useEffect(() => {
+    const stored = localStorage.getItem('gemini_api_key');
+    if (stored) {
+      setApiKey(stored);
+      setApiKeyInput(stored);
+    }
+  }, []);
+
+  // APIキーの保存
+  const saveApiKey = () => {
+    const trimmed = apiKeyInput.trim();
+    if (!trimmed) return;
+    localStorage.setItem('gemini_api_key', trimmed);
+    setApiKey(trimmed);
+  };
+
+  // APIキーのクリア
+  const clearApiKey = () => {
+    localStorage.removeItem('gemini_api_key');
+    setApiKey('');
+    setApiKeyInput('');
+  };
+
+  // 設定パネルの開閉
+  const openSettings = () => {
+    setShowSettings(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+    document.body.style.overflow = '';
+  };
+
+  // APIキー未設定時にAI機能を使おうとした場合のガード
+  const requireApiKey = (): boolean => {
+    if (apiKey) return true;
+    openSettings();
+    return false;
+  };
+
   // ===== リーダーモード =====
   const openReader = (article: Article) => {
     setReaderArticle(article);
@@ -497,6 +544,8 @@ export default function Home() {
 
   // ===== AI Digest =====
   const generateDigest = async (force = false) => {
+    if (!requireApiKey()) return;
+
     setShowDigest(true);
     setDigestLoading(true);
     setDigestError('');
@@ -507,7 +556,10 @@ export default function Home() {
     try {
       const res = await fetch('/api/digest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Gemini-API-Key': apiKey,
+        },
         body: JSON.stringify({ force }),
       });
       const data = await res.json();
@@ -533,11 +585,16 @@ export default function Home() {
 
   // ===== 新機能: AI 記事要約 =====
   const summarizeArticle = async (id: string) => {
+    if (!requireApiKey()) return;
+
     setSummarizingIds(prev => new Set(prev).add(id));
 
     try {
       const res = await fetch(`/api/articles/${id}/summarize`, {
         method: 'POST',
+        headers: {
+          'X-Gemini-API-Key': apiKey,
+        },
       });
       const data = await res.json();
 
@@ -652,6 +709,14 @@ export default function Home() {
             disabled={digestLoading}
           >
             {digestLoading ? '🧠 生成中...' : '🧠 AI Digest'}
+          </button>
+          <button
+            className={feat.settingsHeaderBtn}
+            onClick={openSettings}
+            title="設定"
+          >
+            ⚙️
+            <span className={`${feat.settingsDot} ${apiKey ? feat.settingsDotOk : feat.settingsDotWarn}`} />
           </button>
         </div>
       </header>
@@ -1077,6 +1142,78 @@ export default function Home() {
           onRemove={removeFromReadLater}
           onReorder={reorderReadLater}
         />
+      )}
+
+      {/* ===== 設定パネル ===== */}
+      {showSettings && (
+        <>
+          <div className={feat.settingsOverlay} onClick={closeSettings} />
+          <div className={feat.settingsPanel}>
+            <div className={feat.settingsHeader}>
+              <div className={feat.settingsTitle}>⚙️ 設定</div>
+              <button className={feat.settingsClose} onClick={closeSettings} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className={feat.settingsBody}>
+              <div className={feat.settingsSection}>
+                <div className={feat.settingsSectionTitle}>🔑 Gemini API キー</div>
+                <div className={feat.settingsSectionDesc}>
+                  AI要約やDigest生成に必要なAPIキーです。キーはブラウザ内（localStorage）にのみ保存され、サーバーには一切保存されません。
+                </div>
+
+                {/* 設定状態インジケータ */}
+                {apiKey ? (
+                  <div className={`${feat.settingsStatus} ${feat.settingsStatusOk}`}>
+                    ✅ APIキー設定済み
+                  </div>
+                ) : (
+                  <div className={`${feat.settingsStatus} ${feat.settingsStatusWarn}`}>
+                    ⚠️ APIキーが未設定です
+                  </div>
+                )}
+
+                {/* 入力欄 */}
+                <div className={feat.settingsInputGroup}>
+                  <input
+                    type="password"
+                    className={feat.settingsInput}
+                    placeholder="AIza..."
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveApiKey(); }}
+                  />
+                  <button
+                    className={feat.settingsSaveBtn}
+                    onClick={saveApiKey}
+                    disabled={!apiKeyInput.trim()}
+                  >
+                    保存
+                  </button>
+                </div>
+
+                {/* クリアボタン */}
+                {apiKey && (
+                  <button className={feat.settingsClearBtn} onClick={clearApiKey}>
+                    🗑 APIキーをクリア
+                  </button>
+                )}
+
+                {/* APIキー取得リンク */}
+                <div style={{ marginTop: '1rem' }}>
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={feat.settingsLink}
+                  >
+                    🔗 Google AI Studio でAPIキーを取得
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </main>
   );
